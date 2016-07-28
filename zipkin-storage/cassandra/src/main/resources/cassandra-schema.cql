@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS zipkin.traces (
     all_annotations     text,
     PRIMARY KEY (trace_id, ts, id)
 )
-    WITH compaction = {'class': 'org.apache.cassandra.db.compaction.TimeWindowCompactionStrategy'}
+    WITH CLUSTERING ORDER BY (ts DESC)
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.TimeWindowCompactionStrategy'}
     AND default_time_to_live =  604800;
 
 
@@ -54,7 +55,8 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS zipkin.service_names
     AS SELECT service_name, span_name, bucket, ts, trace_id FROM service_span_name_index
             WHERE service_name is not null AND span_name is not null AND bucket is not null AND ts is not null
             PRIMARY KEY (service_name, bucket, span_name, ts)
-        WITH compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}
+        WITH CLUSTERING ORDER BY (bucket DESC, ts DESC)
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}
         AND default_time_to_live =  259200;
 
 CREATE CUSTOM INDEX ON zipkin.traces (all_annotations) USING 'org.apache.cassandra.index.sasi.SASIIndex'
